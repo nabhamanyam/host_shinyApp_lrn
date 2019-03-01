@@ -28,10 +28,11 @@ ui <- fluidPage(
                 h1("Executive Dashboard"),
                 fluidRow(
                   infoBoxOutput("boxvals1"),
-                  infoBoxOutput("boxvals2"),
-                  valueBoxOutput("valbox2")
+                  infoBoxOutput("boxvals2")
+
                 ),
                 fluidRow(
+                  valueBoxOutput("valbox2"),
                   valueBoxOutput("valbox1")
                 ),
                 fluidRow(
