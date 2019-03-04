@@ -53,6 +53,10 @@ ui <- fluidPage(
         tabItem(tabName = "Sales",
                 h2("Sales Dashboard"),
                 fluidRow(
+                  column(4),
+                  selectInput("FctSel", "Select Measure", choices = colnames(faithful))
+                ),
+                fluidRow(
                   box(title = "Density Curve", solidHeader = T,status = 'primary', plotOutput('Report6'))
                 )
         ),
@@ -98,8 +102,8 @@ server <- function(input, output, session) {
   })
   output$Report6 <- renderPlot({
     ggplot(data = faithful) +
-      geom_density(kernel = "gaussian", mapping = aes(x = eruptions)) +
-      labs(title = "Guassian Density Curve: Eruptions")
+      geom_density(kernel = "gaussian", mapping = aes(x = faithful[,input$FctSel])) +
+      labs(title = "Guassian Density Curve", x = toupper(input$FctSel))
   })
   output$boxvals1 <- renderInfoBox({
     infoBox("Average Eruptions",format(mean(faithful$eruptions),digits = 2),icon = icon('chart-line'))
