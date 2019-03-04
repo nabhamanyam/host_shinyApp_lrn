@@ -3,7 +3,7 @@ library(shinydashboard)
 library(ggplot2)
 library(scales)
 
-
+options(browser = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
 library(shiny)
 
 ui <- fluidPage(
