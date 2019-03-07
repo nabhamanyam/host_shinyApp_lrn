@@ -15,7 +15,7 @@ ui <- fluidPage(
       sidebarSearchForm("searchText", "buttonSearch", "Search"),
       sidebarMenu(
         menuItem("Dashboard", tabName = "dashboard", icon = icon('dashboard')),
-        menuSubItem("Sales Dashboard", tabName = "Sales", icon = icon('chart-line')),
+        menuSubItem("Density Curve", tabName = "Sales", icon = icon('chart-line')),
         menuSubItem("Finance Dashboard", "Finance", icon = icon('chart-bar')),
         menuItem("Detailed Analysis", tabName = "Details", icon = icon('bar-chart-o')),
         menuItem("Raw Data", tabName = "Raw", icon = icon('table'))
@@ -52,7 +52,7 @@ ui <- fluidPage(
                 
         ),
         tabItem(tabName = "Sales",
-                h2("Sales Dashboard"),
+                #h2("Sales Dashboard"),
                 fluidRow(
                   column(4),
                   selectInput("FctSel", "Select Measure", choices = colnames(faithful))
@@ -62,7 +62,8 @@ ui <- fluidPage(
                 )
         ),
         tabItem(tabName = "Finance",
-                h2("Finance Dashboard")
+                h2("Finance Dashboard"),
+                plotOutput("Report7")
         ),
         tabItem(tabName = "Details",
                 h1("Detailed Report"),
@@ -114,6 +115,10 @@ server <- function(input, output, session) {
   })
   output$valbox1 <- renderValueBox({
     valueBox(number(mean(faithful$waiting)/mean(faithful$eruptions), accuracy = .01),"Faithful Index", icon = icon('phoenix-framework'))
+  })
+  output$Report7 <- renderPlot({
+    ggplot(data = faithful) +
+      geom_point()
   })
   ix = mean(faithful$waiting)/mean(faithful$eruptions) -5
   output$valbox2 <- renderValueBox({
