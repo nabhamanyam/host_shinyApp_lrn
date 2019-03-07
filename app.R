@@ -1,10 +1,11 @@
-#install.packages('shinydashboard')
+#install.packages('google')
+library(shiny)
 library(shinydashboard)
 library(ggplot2)
 library(scales)
 
-options(browser = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
-library(shiny)
+
+#options(browser = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
 
 ui <- fluidPage(
   dashboardPage(
@@ -127,3 +128,4 @@ server <- function(input, output, session) {
 
 # Run the app
 shinyApp(ui, server)
+0
