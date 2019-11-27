@@ -1,0 +1,199 @@
+rm(list=ls())
+library(shiny)
+library(shinydashboard)
+library(tidyverse)
+library(RSQLite)
+library(DT)
+library(reticulate)
+#options(browser = "C:/Program Files/Google/Chrome/Application/chrome.exe")
+
+cclist <- read.csv("E:/R_Process/R_Control Files/Country_Subcategory_All_WV.csv")
+setwd("E:\\0 Codes\\Harmonization RStudio Dashboard")
+# source("Main_Code.R")
+# Define UI for application that draws a histogram
+ui <- dashboardPage(
+    title = "Harmonization Dashboard",
+    skin=("red"),
+    dashboardHeader(title = "Data Ingestion"),
+    dashboardSidebar(
+        sidebarMenu(
+            menuItem("DATA PROCESSING",tabName = "rprocess",icon = icon("globe-asia")),
+            menuItem("AUTOMATED DATA EXTRACTION",tabName = "rpa",icon = icon("chart-bar")),
+            menuItem("CONTROL FILES",tabName = "cfiles",icon = icon("table")),
+            menuItem("Update GM",tabName = "GMupdte",icon = icon("table")),
+            menuItem("Update BM",tabName = "BMupdte",icon = icon("table")),
+#            menuItem("ML HARMONIZATION",tabName = "ml",icon = icon("futbol")),
+            menuItem("VARIANT SIMILARITY",tabName = "newvar",icon = icon("list-alt"))
+             )
+    ),
+    dashboardBody(
+        tabItems(
+            tabItem(
+                tabName = "rprocess",
+                h1("Run Harmonization Process"),
+                wellPanel(fluidRow(
+                    column(2, uiOutput("in1")),
+                    column(2, uiOutput("in2")),
+                    column(2, uiOutput("in3")),
+                    column(2, uiOutput("in4")),
+                    column(4, uiOutput("in5"))
+                    
+                    )),
+                fluidRow(
+                    column(4, wellPanel(
+                           actionButton("RunHarmProcess", "Run DI Harmonization Process", width = 400)
+                           ))
+                )
+            ),
+            tabItem(
+                tabName = "rpa",
+                h1("RPA Status"),
+                fluidRow(
+                    DT::dataTableOutput('tableRPA')
+                    )
+            ),
+            tabItem(
+                tabName = "cfiles",
+                h1("Processing Dashboard"),
+                tabsetPanel(
+                    tabPanel("Global Mapping", DT::dataTableOutput('tableGM')),
+                    tabPanel("Brand Mapping", DT::dataTableOutput('tableBM')),
+                    tabPanel("Level Mapping", DT::dataTableOutput('tableLM')),
+                    tabPanel("RE Mapping", DT::dataTableOutput('tableREM')),
+                    tabPanel("Column Mapping", DT::dataTableOutput('tableCM'))
+                )
+            )
+            # tabItem(
+            #     tabName = "ml",
+            #     h1("Machine Learning Product Classitication Engine"),
+            #     column(4,fluidRow(wellPanel(
+            #         fileInput("mlfile", "Choose Unmapped Data File",
+            #                   multiple = FALSE,
+            #                   accept = c(".csv"))
+            #                 )
+            #             )),
+            #     fluidRow(DT::dataTableOutput('mluploadfile'))
+            # )
+        )
+        
+    )
+    
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$in1 <- renderUI({
+        selectizeInput("var1", "Select Division", choices = unique(cclist$Division))
+    })
+    
+    output$in2 <- renderUI({
+        choice_var2<-reactive({
+            cclist%>%
+                filter(Division==input$var1)%>%
+                pull(Hub)%>%
+                as.character()
+        })
+        selectizeInput("var2","Select Hub", choices=c("select"="",choice_var2()))
+    })
+    
+    output$in3 <- renderUI({
+        choice_var3<-reactive({
+            cclist%>%
+                #filter(Division==input$var1)%>%
+                filter(Hub==input$var2)%>%
+                pull(Country)%>%
+                as.character()
+        })
+        selectizeInput("var3","Select Country", choices=c("select"="",choice_var3()))
+    })
+    
+    output$in4 <- renderUI({
+        choice_var4<-reactive({
+            cclist%>%
+                #filter(Division==input$var1)%>%
+                #filter(Hub==input$var2)%>%
+                filter(Country==input$var3)%>%
+                pull(Product_Category)%>%
+                as.character()
+        })
+        selectizeInput("var4","Select Prod-Cat", choices=c("select"="",choice_var4()))
+    })
+    
+    output$in5 <- renderUI({
+        choice_var5<-reactive({
+            cclist%>%
+                #filter(Division==input$var1)%>%
+                #filter(Hub==input$var2)%>%
+                filter(Country==input$var3)%>%
+                filter(Product_Category==input$var4)%>%
+                pull(Subcategory)%>%
+                as.character()
+        })
+        selectizeInput("var5","Select Sub-cat", choices=c("select"="",choice_var5()))
+    })
+    
+    runpro <- observeEvent(input$RunHarmProcess, {
+        source("Main_Code.R")
+    }
+    )
+    
+    mydb <- dbConnect(RSQLite::SQLite(), paste0("E:\\R_Process\\R_Control Files\\DataIngestion.db"))
+    GM <- dbGetQuery(mydb,'SELECT * FROM Global_Mapping_Inhouse')
+    BM <- dbGetQuery(mydb,'SELECT * FROM BRAND_MANF_Inhouse')
+    LM <- dbGetQuery(mydb,'SELECT * FROM mappingprodlevel_WV')
+    REM <- dbGetQuery(mydb,'SELECT * FROM RE_MappingFile_WV')
+    CM <- dbGetQuery(mydb,'SELECT * FROM mappingcolnames_WV')
+    
+    output$tableGM <- DT::renderDataTable(
+        DT::datatable(GM[,-c(1:3,7)], options = list(pageLength = 100, scrollX = TRUE, scroller = TRUE), filter = "top", class = 'compact')
+        )
+    
+    output$tableBM <- DT::renderDataTable(
+        DT::datatable(BM[,-c(1,3)], options = list(pageLength = 1000, scrollX = TRUE, scroller = TRUE), filter = "top", class = 'compact')
+    )
+    
+    output$tableLM <- DT::renderDataTable(
+        DT::datatable(LM, options = list(pageLength = 1000, scrollX = TRUE, scroller = TRUE), filter = "top", class = 'compact')
+    )
+    
+    output$tableREM <- DT::renderDataTable(
+        DT::datatable(REM, options = list(pageLength = 1000, scrollX = TRUE, scroller = TRUE), filter = "top", class = 'compact')
+    )
+    
+    output$tableCM <- DT::renderDataTable(
+        DT::datatable(CM, options = list(pageLength = 1000, scrollX = TRUE, scroller = TRUE), filter = "top", class = 'compact')
+    )
+    
+    wspdb <- dbConnect(RSQLite::SQLite(), paste0("E:\\DI Pipeline\\Control_Files\\MasterData.db"))
+    processing <- dbGetQuery(wspdb,'SELECT "DIVISION","COUNTRY","CATEGORY","PRODCAT","SUBCAT","DATABASE","DB_Update","WSP_Run","WSP_Status","R_Run","R_Status"
+                                    FROM DB_Master')
+    # output$tableRPA <- DT::renderDataTable(
+    #     DT::datatable(processing, options = list(pageLength = 1000), filter = "top")
+    #     # datatable(processing) %>% formatStyle("WSP_Run", target = 'row',
+    #     #             styleEqual(c(0,2),c("grey","yellow")))
+    #     #renderDataTable(processing)
+    # )
+    # output$tableRPA <- renderDT(
+    #     DT::datatable(processing, options = list(pageLength = 1000), filter = "top")
+    # )
+    
+    output$tableRPA <- DT::renderDataTable(
+    datatable(processing, options = list(pageLength = 1000), filter = "top", class = 'compact')%>%formatStyle('R_Status',target="row",backgroundColor =styleEqual(c("Success","Yet to Run"),c("green","grey") ))
+    )
+    
+    output$mluploadfile <- renderTable({
+        req(input$mlfile)
+        DT::datatable(input$MLfile, options = list(pageLength = 100), filter = "top", class = 'compact')
+        
+    })
+    # specificationFileObject = reactive({
+    #     infile = input$specificationFile
+    #     if (is.null(infile))
+    #         return(NULL)
+    #     return(infile)
+    # })
+    }
+
+# Run the application 
+shinyApp(ui = ui, server = server)
